@@ -2,7 +2,7 @@
 // @name         hatebuToBluesky
 // @namespace    http://tampermonkey.net/snow113/hatebuToBluesky/
 // @version      2024-02-12
-// @updateURL.   
+// @updateURL    https://github.com/snow113-gt/userscript/blob/master/HatebuToBluesky/HatebuToBluesky.user.js
 // @description  はてなブックマークのブックマーク内容をBlueskyに投稿するユーザースクリプト
 // @author       snow113
 // @match        https://b.hatena.ne.jp/%はてなのユーザーID%/bookmark*
