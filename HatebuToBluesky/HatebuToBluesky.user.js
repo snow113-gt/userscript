@@ -399,9 +399,7 @@ function getFileType(fileName) {
  * @return タグの値
  */
 function getNodeImage(baseNode, selectors) {
-        console.log(selectors);
     const node = baseNode.querySelector(selectors);
-        console.log(node);
     if (node) {
         return node;
     }
