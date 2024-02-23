@@ -75,15 +75,18 @@ async function postBluesky(bookmarkNode) {
         });
 
         let postData = {};
+        let postText = "";
         try {
             postData = await createBookmarkPostData(bookmarkNode);
+            postText = postData.text+" "+postData.embed.external.title;
         } catch (error) {
             // リンクカード形式にできない時は通常のテキストとして投稿
             console.log("リンクカードの生成に失敗："+error);
             postData = createTextPostData(bookmarkNode);
+            postText = postData.text;
         }
 
-        if (confirm("ブックマーク「"+JSON.stringify(postData.text)+"」をBlueskyに投稿します")) {
+        if (confirm("ブックマーク「"+postText+"」をBlueskyに投稿します")) {
             return new Promise((resolve, reject) => {
                 GM_xmlhttpRequest({
                     method: "POST",
