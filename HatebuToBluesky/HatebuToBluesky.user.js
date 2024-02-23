@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         hatebuToBluesky
 // @namespace    http://tampermonkey.net/snow113/hatebuToBluesky/
-// @version      2024-02-18
+// @version      2024-02-23
 // @updateURL    https://github.com/snow113-gt/userscript/blob/master/HatebuToBluesky/HatebuToBluesky.user.js
 // @description  はてなブックマークのブックマーク内容をBlueskyに投稿するユーザースクリプト
 // @author       snow113
@@ -11,6 +11,7 @@
 // @grant        GM_xmlhttpRequest
 // @connect      bsky.social
 // @connect      cdn-ak-scissors.b.st-hatena.com
+// @connect      cdn-ak-scissors.favicon.st-hatena.com
 // @connect      cdn-ak2.favicon.st-hatena.com
 // ==/UserScript==
 
@@ -63,7 +64,7 @@ function createBaseIcon(bookmarkNode) {
  */
 async function postBluesky(bookmarkNode) {
     try {
-        let client = new BlueskyConnect(BLUESKY_HANDLE, BLUESKY_APP_PASS);
+        const client = new BlueskyConnect(BLUESKY_HANDLE, BLUESKY_APP_PASS);
         await client.verify_session()
             .then((session) => {
             if (session.error)
@@ -98,13 +99,7 @@ async function postBluesky(bookmarkNode) {
                         record: postData,
                     }),
                     onload: ({response}) => {
-                        if (response.OK) {
-                            resolve(response);
-                        }
-                        else {
-                            window.alert('Blueskyへの投稿に失敗しました');
-                            reject(response);
-                        }
+                        resolve(response);
                     },
                     withCredentials: true,
                     responseType: 'json',
@@ -125,7 +120,7 @@ async function postBluesky(bookmarkNode) {
  */
 async function postBlobData(postBlobData) {
     try {
-        let client = new BlueskyConnect(BLUESKY_HANDLE, BLUESKY_APP_PASS);
+        const client = new BlueskyConnect(BLUESKY_HANDLE, BLUESKY_APP_PASS);
         await client.verify_session()
             .then((session) => {
             if (session.error)
@@ -146,13 +141,7 @@ async function postBlobData(postBlobData) {
                 fetch: true,
                 data: postBlobData,
                 onload: ({response}) => {
-                    if (response.OK) {
-                        resolve(response);
-                    }
-                    else {
-                        console.log('BLOBアップロードに失敗しました');
-                        reject(response);
-                    }
+                    resolve(response);
                 },
                 withCredentials: true,
                 responseType: 'json',
@@ -178,7 +167,7 @@ async function createBookmarkPostData(bookmarkNode) {
     const imageData = await getBookmarkImage(bookmarkNode);
 
     // 画像をPDSに投稿
-    const blobData = await postBlobData(imageData).blob;
+    const blobData = await postBlobData(imageData);
 
     return {
         'text': postComment,
@@ -189,7 +178,7 @@ async function createBookmarkPostData(bookmarkNode) {
                 'uri': linkUrl,
                 'title': linkText,
                 'description': linkDescription,
-                'thumb': blobData,
+                'thumb': blobData.blob,
             },
         },
     };
