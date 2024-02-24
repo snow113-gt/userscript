@@ -307,16 +307,7 @@
                 },],
             },];
         }
-
-        /**
-         * 画像BLOBデータを返す
-         * @param imageUrl 画像URL
-         * @return 画像BLOBデータ
-         */
-        async getImageData(imageUrl) {
-            return await this.getImageBlob(imageUrl);
-        }
-
+        
         /**
          * 画像BLOBデータを返す
          * @param imageUrl 画像URL
