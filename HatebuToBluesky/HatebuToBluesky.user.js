@@ -89,9 +89,17 @@
          * @return ブックマークタグ
          */
         getBookmarkTags(bookmarkNode) {
-            let text = this.domUtil.getNodeText(bookmarkNode, "ul.centerarticle-reaction-tags");
-            if (text) {
-                return "["+text.replaceAll(" ","][")+"]";
+            let node = this.domUtil.getNode(bookmarkNode, "ul.centerarticle-reaction-tags");
+            if (node) {
+                let tagText = "";
+                const nodes = node.childNodes;
+                for (let i=0;i<nodes.length; i++) {
+                    const tagNode = nodes[i];
+                    if (tagNode.innerText) {
+                        tagText+="["+tagNode.innerText+"]";
+                    }
+                }
+                return tagText;
             }
             return "";
         }
