@@ -5,7 +5,7 @@
 // @updateURL    https://github.com/snow113-gt/userscript/blob/master/HatebuToBluesky/HatebuToBluesky.user.js
 // @description  はてなブックマークのブックマーク内容をBlueskyに投稿するユーザースクリプト
 // @author       snow113
-// @match        https://b.hatena.ne.jp/%はてなのユーザーID%/bookmark*
+// @match        https://b.hatena.ne.jp/%はてなのユーザーID%/*
 // @icon         https://bsky.app/static/favicon-16x16.png
 // @grant        GM_setValue
 // @grant        GM_xmlhttpRequest
