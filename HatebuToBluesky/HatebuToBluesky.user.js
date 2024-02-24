@@ -49,7 +49,6 @@
      */
     const postBluesky = async function (bookmarkNode) {
         try {
-            console.log(blueskyClient);
             await blueskyClient.verify_session()
                 .then((session) => {
                 if (session.error)
@@ -107,7 +106,6 @@
      */
     const postBlobData = async function (postBlobData) {
         try {
-            console.log(blueskyClient);
             await blueskyClient.verify_session()
                 .then((session) => {
                 if (session.error)
