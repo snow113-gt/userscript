@@ -577,15 +577,16 @@
     };
 
     // Your code here...
-    const blueskyCon = new BlueskyProcess(BLUESKY_HANDLE, BLUESKY_APP_PASS);
-    const bookmarkNodes = document.querySelectorAll("li.bookmark-item");
-    const valTargetCss = "ul.centerarticle-reaction-menu";//"div.centerarticle-reaction-meta";
+    const valTargetCss = "ul.centerarticle-reaction-menu";
 
     // Bluesky投稿ボタンのスタイルを定義
     let css = `.bskyBtnCss { display: block; margin: auto; }`;
     let style = document.createElement('style');
     style.innerHTML = css;
     document.head.append(style);
+
+    const blueskyCon = new BlueskyProcess(BLUESKY_HANDLE, BLUESKY_APP_PASS);
+    const bookmarkNodes = document.querySelectorAll("li.bookmark-item");
 
     if (bookmarkNodes) {
         bookmarkNodes.forEach(function(bookmarkNode) {
