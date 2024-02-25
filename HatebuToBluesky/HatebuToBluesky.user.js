@@ -7,7 +7,6 @@
 // @author       snow113
 // @match        https://b.hatena.ne.jp/%はてなのユーザーID%/*
 // @icon         https://bsky.app/static/favicon-16x16.png
-// @grant        GM_setValue
 // @grant        GM_xmlhttpRequest
 // @connect      bsky.social
 // @connect      cdn-ak-scissors.b.st-hatena.com
@@ -454,7 +453,7 @@
                     {
                         throw new Error(session.message);
                     }
-                    GM_setValue('bskySession', session);
+                    this.setLocalStorageValue('bskySession', session);
                 });
 
                 return new Promise((resolve, reject) => {
@@ -497,7 +496,7 @@
                     {
                         throw new Error(session.message);
                     }
-                    GM_setValue('bskySession', session);
+                    this.setLocalStorageValue('bskySession', session);
                 });
 
                 return new Promise((resolve, reject) => {
@@ -521,6 +520,13 @@
             catch (e) {
                 console.log(e);
             }
+        }
+
+        /**
+         * GM_setValue代替
+         */
+        setLocalStorageValue(key , value) {
+            window.localStorage.setItem(key , value);
         }
     }
 
