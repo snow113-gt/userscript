@@ -7,7 +7,7 @@
 
 【動作確認済環境】
 
-　(2024/02/18時点) Mac OSX 14.2.1、Firefox 122.0.1、Tampermonkey 5.0.1
+　(2024/02/25時点) Mac OSX 14.2.1、Firefox 123.0、Tampermonkey 5.0.1
 
 【利用方法】
 
