@@ -542,7 +542,6 @@
         const bookmarkData = await BookmarkData.dataFactory(bookmarkNode);
         const builder = await PostDataBuilder.builderFactory(bookmarkData);
 
-        // 投稿データ作成
         let postData;
         try {
             if (builder.imageData) {
@@ -564,27 +563,38 @@
     }
 
     /**
-     * Blueskyへの投稿機能を付与したノードを作成して返す
+     * Bluesky投稿ボタンを作成して返す
      * @param bookmarkNode ブックマークアイテムのノード
-     * @return 投稿用ノード
+     * @return Bluesky投稿ボタン
      */
     const createBaseIcon = function(bookmarkNode) {
-        var buttonNode = document.createElement("input");
-        buttonNode.setAttribute("type","image");
-        buttonNode.setAttribute("src", BUTTON_IMAGE);
+        const buttonNode = document.createElement("input");
+        buttonNode.type = "image";
+        buttonNode.src = BUTTON_IMAGE;
+        buttonNode.classList.add("bskyBtnCss");
         buttonNode.addEventListener("click", ()=> {return blueskyButtonAction(bookmarkNode); }, false);
 
-        return buttonNode;
+        const liNode = document.createElement("li");
+        liNode.classList.add("bskyBtnCss");
+        liNode.append(buttonNode);
+
+        return liNode;
     };
 
     // Your code here...
     const blueskyCon = new BlueskyProcess(BLUESKY_HANDLE, BLUESKY_APP_PASS);
     const bookmarkNodes = document.querySelectorAll("li.bookmark-item");
-    const valTargetCss = "div.centerarticle-reaction-meta";
+    const valTargetCss = "ul.centerarticle-reaction-menu";//"div.centerarticle-reaction-meta";
+
+    // Bluesky投稿ボタンのスタイルを定義
+    let css = `.bskyBtnCss { display: block; margin: auto; }`;
+    let style = document.createElement('style');
+    style.innerHTML = css;
+    document.head.append(style);
 
     if (bookmarkNodes) {
         bookmarkNodes.forEach(function(bookmarkNode) {
-            // ブックマークアイテム毎に処理
+            // ブックマークアイテムにBluesky投稿ボタンを追加
             const iconNode = createBaseIcon(bookmarkNode);
             const node = bookmarkNode.querySelector(valTargetCss);
             node.prepend(iconNode);
