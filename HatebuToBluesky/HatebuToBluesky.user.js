@@ -315,7 +315,7 @@
                 },],
             },];
         }
-        
+
         /**
          * 画像BLOBデータを返す
          * @param imageUrl 画像URL
@@ -448,13 +448,6 @@
          */
         async postBluesky(postData) {
             try {
-                // 確認メッセージ用テキスト作成
-                let confirmText = postData.text;
-                if (postData.embed.external.title) {
-                    // リンクカード形式の場合は確認メッセージにタイトルを追加
-                    confirmText+=" "+postData.embed.external.title;
-                }
-
                 await this.verifySession()
                     .then((session) => {
                     if (session.error)
@@ -464,29 +457,27 @@
                     GM_setValue('bskySession', session);
                 });
 
-                if (confirm("「"+confirmText+"」をBlueskyに投稿します")) {
-                    return new Promise((resolve, reject) => {
-                        GM_xmlhttpRequest({
-                            method: "POST",
-                            url: BLUESKY_PDS_URL + '/xrpc/com.atproto.repo.createRecord',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Authorization': 'Bearer ' + this.bskySession.accessJwt,
-                            },
-                            fetch: true,
-                            data: JSON.stringify({
-                                repo: this.bskySession.did,
-                                collection: 'app.bsky.feed.post',
-                                record: postData,
-                            }),
-                            onload: ({response}) => {
-                                resolve(response);
-                            },
-                            withCredentials: true,
-                            responseType: 'json',
-                        });
+                return new Promise((resolve, reject) => {
+                    GM_xmlhttpRequest({
+                        method: "POST",
+                        url: BLUESKY_PDS_URL + '/xrpc/com.atproto.repo.createRecord',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': 'Bearer ' + this.bskySession.accessJwt,
+                        },
+                        fetch: true,
+                        data: JSON.stringify({
+                            repo: this.bskySession.did,
+                            collection: 'app.bsky.feed.post',
+                            record: postData,
+                        }),
+                        onload: ({response}) => {
+                            resolve(response);
+                        },
+                        withCredentials: true,
+                        responseType: 'json',
                     });
-                }
+                });
             }
             catch (e) {
                 console.log(e);
@@ -542,24 +533,28 @@
         const bookmarkData = await BookmarkData.dataFactory(bookmarkNode);
         const builder = await PostDataBuilder.builderFactory(bookmarkData);
 
-        let postData;
-        try {
-            if (builder.imageData) {
-                // 画像がある場合はPDSに投稿
-                const blobData = await blueskyCon.postBlobData(builder.imageData);
-                // リンクカード形式の投稿データを作成
-                postData = builder.createSocialCardPostData(blobData);
+        if (confirm("「"+bookmarkData.linkText+"」をBlueskyに投稿します")) {
+            let postData;
+            try {
+                if (builder.imageData) {
+                    // 画像がある場合はPDSに投稿
+                    const blobData = await blueskyCon.postBlobData(builder.imageData);
+                    // リンクカード形式の投稿データを作成
+                    postData = builder.createSocialCardPostData(blobData);
+                }
+            } catch (error) {
+                console.log("リンクカードの生成に失敗："+error);
             }
-        } catch (error) {
-            console.log("リンクカードの生成に失敗："+error);
+
+            if (!postData) {
+                // リンクカード形式にできない時はテキスト形式の投稿データを作成
+                postData = builder.createTextPostData();
+            }
+
+            return await blueskyCon.postBluesky(postData);
         }
 
-        if (!postData) {
-            // リンクカード形式にできない時はテキスト形式の投稿データを作成
-            postData = builder.createTextPostData();
-        }
-
-        return await blueskyCon.postBluesky(postData);
+        return false;
     }
 
     /**
