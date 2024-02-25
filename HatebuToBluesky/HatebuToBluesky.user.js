@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         hatebuToBluesky
 // @namespace    http://tampermonkey.net/snow113/hatebuToBluesky/
-// @version      2024-02-24c
+// @version      2024-02-25
 // @updateURL    https://github.com/snow113-gt/userscript/blob/master/HatebuToBluesky/HatebuToBluesky.user.js
 // @description  はてなブックマークのブックマーク内容をBlueskyに投稿するユーザースクリプト
 // @author       snow113
