@@ -1,8 +1,10 @@
 // ==UserScript==
 // @name         hatebuToBluesky
 // @namespace    http://tampermonkey.net/snow113/hatebuToBluesky/
-// @version      2024-02-25
+// @version      2024-03-03
+// @downloadURL  https://github.com/snow113-gt/userscript/blob/master/HatebuToBluesky/HatebuToBluesky.user.js
 // @updateURL    https://github.com/snow113-gt/userscript/blob/master/HatebuToBluesky/HatebuToBluesky.user.js
+// @supportURL   https://github.com/snow113-gt/userscript/blob/master/HatebuToBluesky/
 // @description  はてなブックマークのブックマーク内容をBlueskyに投稿するユーザースクリプト
 // @author       snow113
 // @match        https://b.hatena.ne.jp/%はてなのユーザーID%/*
@@ -30,11 +32,188 @@
     const BUTTON_IMAGE = "https://bsky.app/static/favicon-16x16.png";
 
     /**
+     * ログ出力
+     */
+    class Logger {
+        logLevel = Logger.LogLevel.Info;
+
+        /**
+         * ログレベル
+         */
+        static LogLevel = {
+            Trace: 1,
+            Debug: 2,
+            Info: 3,
+            Warning: 4,
+            Error: 5,
+        };
+
+        /**
+         * トレースログを出力する
+         * @param processName 機能名
+         * @param messsage 出力メッセージ
+         * @param error エラーオブジェクト
+         */
+        static trace(processName, message, error) {
+            Logger.outputLog(Logger.LogLevel.Trace, processName, message, error);
+        }
+
+        /**
+         * デバッグログを出力する
+         * @param processName 機能名
+         * @param messsage 出力メッセージ
+         * @param error エラーオブジェクト
+         */
+        static debug(processName, message, error) {
+            Logger.outputLog(Logger.LogLevel.Debug, processName, message, error);
+        }
+
+        /**
+         * ログを出力する
+         * @param processName 機能名
+         * @param messsage 出力メッセージ
+         * @param error エラーオブジェクト
+         */
+        static info(processName, message, error) {
+            Logger.outputLog(Logger.LogLevel.Info, processName, message, error);
+        }
+
+        /**
+         * 警告ログを出力する
+         * @param processName 機能名
+         * @param messsage 出力メッセージ
+         * @param error エラーオブジェクト
+         */
+        static warning(processName, message, error) {
+            Logger.outputLog(Logger.LogLevel.Warning, processName, message, error);
+        }
+
+        /**
+         * エラーログを出力する
+         * @param processName 機能名
+         * @param messsage 出力メッセージ
+         * @param error エラーオブジェクト
+         */
+        static error(processName, message, error) {
+            Logger.outputLog(Logger.LogLevel.Error, processName, message, error);
+            alert(message+": \n\t"+error);
+        }
+
+        /**
+         * ログ出力
+         * @param level ログ出力レベル
+         * @param processName 機能名
+         * @param messsage 出力メッセージ
+         * @param error エラーオブジェクト
+         */
+        static outputLog(level, processName, message, error) {
+            if (level >= this.logLevel) {
+                const outputData = [ Logger.getLogLevelName(level), processName, message, error ];
+                switch (this.logLevel) {
+                    case Logger.LogLevel.Trace:
+                    case Logger.LogLevel.Debug:
+                        console.debug(outputData);
+                        break;
+                    case Logger.LogLevel.Info:
+                        console.info(outputData);
+                        break;
+                    case Logger.LogLevel.Warning:
+                        console.warn(outputData);
+                        break;
+                    case Logger.LogLevel.Error:
+                        console.error(outputData);
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+
+        /**
+         * ログレベル名を返す
+         * @param logLevel ログ出力レベル
+         * @return ログレベル名
+         */
+        static getLogLevelName(logLevel) {
+            switch (logLevel) {
+                case Logger.LogLevel.Trace:
+                    return "Trace";
+                case Logger.LogLevel.Debug:
+                    return "Debug";
+                case Logger.LogLevel.Info:
+                    return "Info";
+                case Logger.LogLevel.Warning:
+                    return "Warning";
+                case Logger.LogLevel.Error:
+                    return "Error";
+                default:
+                    return undefined;
+            }
+        }
+    }
+
+    /**
+     * DOM操作
+     */
+    class DOMUtility {
+        /**
+         * タグを返す
+         * @param baseNode 検索の起点となるタグ
+         * @param selectors タグの取得ルール
+         * @return タグ
+         */
+        static getNode(baseNode, selectors) {
+            return baseNode.querySelector(selectors);
+        }
+
+        /**
+         * タグの値を返す
+         * @param baseNode 検索の起点となるタグ
+         * @param selectors タグの取得ルール
+         * @return タグの値
+         */
+        static getNodeText(baseNode, selectors) {
+            return baseNode.querySelector(selectors).innerText ?? "";
+        }
+
+        /**
+         * 属性の値を返す
+         * @param baseNode 検索の起点となるタグ
+         * @param attrName 属性名
+         * @return 属性の値
+         */
+        static getAttrText(baseNode, attrName) {
+            return baseNode.getAttribute(attrName) ?? "";
+        }
+
+        /**
+         * OGデータから画像URLを返す
+         * @param targetUrl OGデータを取得するURL
+         * @return 画像URL
+         */
+        static async getOgImage(targetUrl) {
+            return new Promise((resolve, reject) => {
+                const details = {
+                    method: "GET",
+                    url: targetUrl,
+                    onload: response => {
+                        const html = response.responseText;
+                        const doc = new DOMParser().parseFromString(html, 'text/html');
+                        const imageUrl = doc.head.querySelector("meta[property='og:image']").content ?? "";
+                        resolve(imageUrl);
+                    },
+                    withCredentials: true,
+                };
+                Logger.trace("getOgImage", details);
+                GM_xmlhttpRequest(details);
+            });
+        }
+    }
+
+    /**
      * ブックマークデータ
      */
     class BookmarkData {
-        domUtil = new DOMUtility();
-
         /** タグを含むコメント */
         baseComment;
         /** ブックマーク先のURL */
@@ -48,9 +227,8 @@
 
         /**
          * コンストラクタ
-         * @param bookmarkNode ブックマークアイテムのノード
          */
-        constructor(bookmarkNode) {
+        constructor() {
         }
 
         /**
@@ -88,7 +266,7 @@
          * @return ブックマークタグ
          */
         getBookmarkTags(bookmarkNode) {
-            let node = this.domUtil.getNode(bookmarkNode, "ul.centerarticle-reaction-tags");
+            let node = DOMUtility.getNode(bookmarkNode, "ul.centerarticle-reaction-tags");
             if (node) {
                 let tagText = "";
                 const nodes = node.childNodes;
@@ -109,7 +287,7 @@
          * @return ブックマークコメント
          */
         getBookmarkComments(bookmarkNode) {
-            return this.domUtil.getNodeText(bookmarkNode, "span.js-comment");
+            return DOMUtility.getNodeText(bookmarkNode, "span.js-comment");
         }
 
         /**
@@ -118,7 +296,7 @@
          * @return ブックマークURL
          */
         getBookmarkUrl(bookmarkNode) {
-            return this.domUtil.getAttrText(bookmarkNode, "data-target-url");
+            return DOMUtility.getAttrText(bookmarkNode, "data-target-url");
         }
 
         /**
@@ -127,7 +305,7 @@
          * @return ブックマークタイトル
          */
         getBookmarkTitle(bookmarkNode) {
-            return this.domUtil.getNodeText(bookmarkNode, "a.js-clickable-link");
+            return DOMUtility.getNodeText(bookmarkNode, "a.js-clickable-link");
         }
 
         /**
@@ -136,7 +314,7 @@
          * @return ブックマークの説明文
          */
         getBookmarkDescription(bookmarkNode) {
-            return this.domUtil.getNodeText(bookmarkNode, "p.centerarticle-entry-summary");
+            return DOMUtility.getNodeText(bookmarkNode, "p.centerarticle-entry-summary");
         }
 
         /**
@@ -149,82 +327,26 @@
 
             try {
                 // サムネ画像のタグを取得
-                let imageNode = this.domUtil.getNode(bookmarkNode, "a.centerarticle-entry-image img");
+                let imageNode = DOMUtility.getNode(bookmarkNode, "a.centerarticle-entry-image img");
                 if (!imageNode) {
                     // サムネ画像のタグが取得できない場合はog:imageを取得
-                    imageUrl = await this.domUtil.getOgImage(this.linkUrl);
+                    imageUrl = await DOMUtility.getOgImage(this.linkUrl);
                     if (!imageUrl) {
                         // og:imageが取得できない場合はfavicon画像のタグを取得
-                        imageNode = this.domUtil.getNode(bookmarkNode, "img.centerarticle-entry-favicon");
+                        imageNode = DOMUtility.getNode(bookmarkNode, "img.centerarticle-entry-favicon");
                     }
                 }
 
                 if (imageNode) {
                     // タグからURLを取得
-                    imageUrl = this.domUtil.getAttrText(imageNode, "src");
+                    imageUrl = DOMUtility.getAttrText(imageNode, "src");
                 }
             }
             catch (error) {
-                console.log("画像の取得に失敗");
+                Logger.info("getBookmarkImageUrl", "画像の取得に失敗", error);
             }
 
             return imageUrl;
-        }
-    }
-
-    /**
-     * DOM操作
-     */
-    class DOMUtility {
-        /**
-         * タグを返す
-         * @param baseNode 検索の起点となるタグ
-         * @param selectors タグの取得ルール
-         * @return タグ
-         */
-        getNode(baseNode, selectors) {
-            return baseNode.querySelector(selectors);
-        }
-
-        /**
-         * タグの値を返す
-         * @param baseNode 検索の起点となるタグ
-         * @param selectors タグの取得ルール
-         * @return タグの値
-         */
-        getNodeText(baseNode, selectors) {
-            return baseNode.querySelector(selectors).innerText ?? "";
-        }
-
-        /**
-         * 属性の値を返す
-         * @param baseNode 検索の起点となるタグ
-         * @param attrName 属性名
-         * @return 属性の値
-         */
-        getAttrText(baseNode, attrName) {
-            return baseNode.getAttribute(attrName) ?? "";
-        }
-
-        /**
-         * OGデータから画像URLを返す
-         * @param url OGデータを取得するURL
-         * @return 画像URL
-         */
-        async getOgImage(url) {
-            return new Promise((resolve, reject) => {
-                GM_xmlhttpRequest({
-                    method: "GET",
-                    url,
-                    onload: response => {
-                        const html = response.responseText;
-                        const doc = new DOMParser().parseFromString(html, 'text/html');
-                        const imageUrl = doc.head.querySelector("meta[property='og:image']").content ?? "";
-                        resolve(imageUrl);
-                    },
-                    withCredentials: true,
-                });
-            });
         }
     }
 
@@ -322,7 +444,7 @@
          */
         async getImageBlob(imageUrl) {
             return new Promise((resolve, reject) => {
-                GM_xmlhttpRequest({
+                const details = {
                     method: "GET",
                     url: imageUrl,
                     onload: ({response}) => {
@@ -331,7 +453,9 @@
                     },
                     withCredentials: true,
                     responseType: 'blob',
-                });
+                };
+                Logger.trace("getImageBlob", details);
+                GM_xmlhttpRequest(details);
             });
         }
 
@@ -369,7 +493,7 @@
          */
         async login() {
             return new Promise((resolve, reject) => {
-                const jsonText = {
+                const details = {
                     method: "POST",
                     url: BLUESKY_PDS_URL + '/xrpc/com.atproto.server.createSession',
                     headers: {
@@ -389,7 +513,8 @@
                     },
                     onerror: reject,
                 };
-                GM_xmlhttpRequest(jsonText);
+                Logger.trace("login", details);
+                GM_xmlhttpRequest(details);
             });
         }
 
@@ -399,7 +524,7 @@
         async refreshSession()
         {
             return new Promise((resolve, reject) => {
-                const jsonText = {
+                const details = {
                     method: "POST",
                     url: BLUESKY_PDS_URL + '/xrpc/com.atproto.server.refreshSession',
                     headers: {
@@ -416,7 +541,8 @@
                     },
                     onerror: reject,
                 };
-                GM_xmlhttpRequest(jsonText);
+                Logger.trace("refreshSession", details);
+                GM_xmlhttpRequest(details);
             });
         }
 
@@ -457,7 +583,7 @@
                 });
 
                 return new Promise((resolve, reject) => {
-                    GM_xmlhttpRequest({
+                    const details = {
                         method: "POST",
                         url: BLUESKY_PDS_URL + '/xrpc/com.atproto.repo.createRecord',
                         headers: {
@@ -475,11 +601,13 @@
                         },
                         withCredentials: true,
                         responseType: 'json',
-                    });
+                    };
+                    Logger.trace("postBluesky", details);
+                    GM_xmlhttpRequest(details);
                 });
             }
-            catch (e) {
-                console.log(e);
+            catch (error) {
+                Logger.error("postBluesky", "Blueskyへの投稿に失敗", error);
             }
         }
 
@@ -500,7 +628,7 @@
                 });
 
                 return new Promise((resolve, reject) => {
-                    GM_xmlhttpRequest({
+                    const details = {
                         method: "POST",
                         url: BLUESKY_PDS_URL + '/xrpc/com.atproto.repo.uploadBlob',
                         headers: {
@@ -514,11 +642,14 @@
                         },
                         withCredentials: true,
                         responseType: 'json',
-                    });
+                    };
+                    Logger.trace("postBlobData", details);
+                    GM_xmlhttpRequest(details);
                 });
             }
-            catch (e) {
-                console.log(e);
+            catch (error) {
+                Logger.warning("postBlobData", "PDSへのBLOBアップロードに失敗", error);
+                throw error;
             }
         }
 
@@ -549,7 +680,7 @@
                     postData = builder.createSocialCardPostData(blobData);
                 }
             } catch (error) {
-                console.log("リンクカードの生成に失敗："+error);
+                Logger.warning("blueskyButtonAction", "リンクカードの生成に失敗", error);
             }
 
             if (!postData) {
@@ -584,6 +715,9 @@
 
     // Your code here...
     const valTargetCss = "ul.centerarticle-reaction-menu";
+
+    // ログ出力レベル
+    Logger.logLevel = Logger.LogLevel.Info;
 
     // Bluesky投稿ボタンのスタイルを定義
     let css = `.bskyBtnCss { display: block; margin: auto; }`;
